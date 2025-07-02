@@ -12,6 +12,8 @@ logger.setLevel(logging.DEBUG)
 
 
 class DataField(BaseModel):
+    name: str
+    api_name: str
     field_type: FieldType
     count: ClassVar[int] = 0
 

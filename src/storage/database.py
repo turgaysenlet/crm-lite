@@ -1,4 +1,6 @@
 import logging
+import uuid
+import time
 from sqlite3 import Connection, Cursor
 from typing import Optional
 
@@ -6,13 +8,15 @@ from pydantic import BaseModel, ConfigDict
 import sqlite3
 import json
 
+from src.core.data.data_object import DataObject
+
 logging.basicConfig()
 logger = logging.getLogger("Database")
 logger.setLevel(logging.DEBUG)
 
 
 class DataBase(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True) # Apply this here
+    model_config = ConfigDict(arbitrary_types_allowed=True)  # Apply this here
 
     db_name: str
     conn: Optional[Connection] = None  # Connection object
@@ -30,9 +34,9 @@ class DataBase(BaseModel):
             self.conn = sqlite3.connect(self.db_name)
             self.conn.row_factory = sqlite3.Row  # Allows accessing columns by name
             self.cursor = self.conn.cursor()
-            print(f"Connected to database: {self.db_name}")
+            logger.debug(f"Connected to database: {self.db_name}")
         except sqlite3.Error as e:
-            print(f"Error connecting to database: {e}")
+            logger.error(f"Error connecting to database: {e}")
             raise
         return self.conn
 
@@ -90,6 +94,31 @@ class DataBase(BaseModel):
 
         self.conn.commit()
         self.conn.close()
+
+    def insert_object_definition_from_object(self, obj: DataObject):
+        self.insert_object_definition(obj.name, obj.api_name, obj.obj_type, obj.description)
+
+    def insert_object_definition(self, name, api_name, obj_type, description=None, id=None):
+        """Inserts a new object definition."""
+        if id is None:
+            obj_id = str(uuid.uuid4())
+        else:
+            obj_id = id
+        now = time.time()
+        try:
+            self.cursor.execute(
+                "INSERT INTO ObjectDefinition (id, name, api_name, type, description, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (obj_id, name, api_name, obj_type, description, now, now)
+            )
+            self.conn.commit()
+            logger.info(f"Object '{name}' ({api_name}) added successfully.")
+            return obj_id
+        except sqlite3.IntegrityError as e:
+            logger.error(f"Error: Object with name '{name}' or api_name '{api_name}' already exists. {e}")
+            return None
+        except sqlite3.Error as e:
+            logger.error(f"Error inserting object definition: {e}")
+            return None
 
     def list_table(self, table_name):
         """

@@ -3,6 +3,7 @@ import uuid
 
 from src.core.access.profile import Profile
 from src.core.access.user import User
+from src.core.data.case_object import Case
 from src.core.data.data_field import DataField
 from src.core.data.data_object import DataObject
 from src.storage.database import DataBase
@@ -17,7 +18,7 @@ def main():
     logger.info("Welcome to CRM-Lite CLI")
 
     # Create objects
-    object1: DataObject = DataObject(name="Customer A")
+    case1: Case = Case(name="Case 1")
     user1: User = User(name="User 1 - All access")
     user2: User = User(name="User 2 - Limited access")
     profile1: Profile = Profile(name="Profile 1 - All access")
@@ -28,7 +29,6 @@ def main():
     profile2.users.append(user2)
 
     # Log objects
-    logger.info(f"{object1}")
     logger.info(f"{user1}")
     logger.info(f"{user2}")
     logger.info(f"{profile1}")
